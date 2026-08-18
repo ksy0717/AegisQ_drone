@@ -1,0 +1,16 @@
+[Unit]
+Description=MediaMTX RTSP server (drone video)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/mediamtx /usr/local/etc/mediamtx.yml
+Restart=always
+RestartSec=2
+LimitNOFILE=65536
+# 카메라/DMA 버퍼 접근 위해 root 로 구동 (하드닝은 추후 과제)
+User=root
+
+[Install]
+WantedBy=multi-user.target

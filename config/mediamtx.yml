@@ -1,0 +1,45 @@
+###############################################
+# MediaMTX - 드론 영상 RTSP 서버
+# 주: Go yaml.v3 는 yes/no 를 불린으로 보지 않음 → 반드시 true/false
+###############################################
+logLevel: info
+logDestinations: [stdout]
+
+readTimeout: 10s
+writeTimeout: 10s
+writeQueueSize: 512
+udpMaxPayloadSize: 1452
+
+# 상태 조회용 로컬 API (외부 노출 안 함)
+api: true
+apiAddress: 127.0.0.1:9997
+
+# --- RTSP만 사용 ---
+rtsp: true
+rtspTransports: [udp, tcp]
+rtspAddress: :8554
+
+# --- 불필요 서버 비활성화 (드론 리소스 절약) ---
+rtmp: false
+hls: false
+webrtc: false
+srt: false
+playback: false
+moq: false
+
+paths:
+  # 검출 오버레이 스트림 - hailo-detect 앱이 publish 한다.
+  # libcamera 는 카메라를 한 프로세스만 열 수 있으므로 runOnDemand 로 별도
+  # 퍼블리셔를 띄우면 안 된다.
+  #
+  # 경로명 cam0 은 SkyHunter GCS 앱의 UnitNetworkConfig.DEFAULT_CAM_PATH 와 맞춘 것이다.
+  # 바꾸면 앱에서 호스트만 입력했을 때 404 가 난다.
+  cam0:
+    source: publisher
+
+  # 카메라 없이 앱 연동을 검증하기 위한 테스트 패턴
+  test:
+    runOnDemand: /usr/local/bin/publish-test.sh
+    runOnDemandRestart: true
+    runOnDemandStartTimeout: 10s
+    runOnDemandCloseAfter: 10s

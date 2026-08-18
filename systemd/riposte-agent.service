@@ -1,0 +1,32 @@
+[Unit]
+Description=Riposte 비행 에이전트 — 지상국 요청 대기 (PX4/MAVSDK)
+Documentation=file:///home/sky/drone_companion/docs/riposte/GCS_USAGE.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sky
+Group=sky
+# 시리얼(Pixhawk UART) 접근에 dialout 이 필요하다.
+SupplementaryGroups=dialout
+WorkingDirectory=/home/sky
+
+# MAVSDK 연결 링크.
+#   Pixhawk UART : serial:///dev/ttyAMA0:921600   (config.txt 에 dtoverlay=uart0-pi5 필요)
+#   PX4 SITL     : udpin://0.0.0.0:14540
+Environment=RIPOSTE_CONNECTION=serial:///dev/ttyAMA0:921600
+
+# 비행 명령 게이트. riposte 는 이중 --execute 구조라 이 값이 1 이어도 지상국이
+# 자기 쪽 --execute 로 요청해야 실제로 비행한다.
+# 지상 점검·정비 중이라 기체가 절대 움직이면 안 될 때는 0 으로 바꾸고 재시작할 것:
+#   sudo systemctl edit riposte-agent   →  [Service] Environment=RIPOSTE_EXECUTE=0
+Environment=RIPOSTE_EXECUTE=1
+
+ExecStart=/usr/local/bin/riposte-agent.sh
+# 링크가 아직 안 올라왔거나(FC 가 Pi 보다 늦게 부팅) 일시적으로 끊겨도 계속 재시도한다.
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

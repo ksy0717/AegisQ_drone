@@ -1,0 +1,42 @@
+[Unit]
+Description=drone_companion — 카메라/검출/RTSP/WHIP 온보드 서비스
+After=network-online.target mediamtx.service
+Wants=network-online.target mediamtx.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=sky
+Group=sky
+# 카메라(/dev/media*, /dev/video*)와 프레임버퍼(/dev/fb0) 접근에 video 그룹이 필요하다.
+# /dev/hailo0 은 0666 이라 별도 권한이 필요 없다.
+SupplementaryGroups=video render
+WorkingDirectory=/home/sky
+
+Environment=SRC_W=1280
+Environment=SRC_H=720
+Environment=SCORE_TH=0.30
+Environment=CLASS_NAMES=person,head
+Environment=ENABLE_DISPLAY=1
+Environment=ENABLE_RTSP=1
+Environment=RTSP_URL=rtsp://127.0.0.1:8554/cam0
+Environment=RTSP_BITRATE=3000
+# This project variant needs RTSP but not onboard inference. Keep the model path and wait
+# settings below so a vehicle-specific systemd drop-in can opt back in with HAILO=1.
+Environment=HAILO=0
+# 부팅 시 udev 보다 먼저 뜰 수 있어 /dev/hailo* 를 잠깐 기다린다.
+# PCIe 에 카드가 없으면 기다리지 않으므로 Hailo 미장착 기체의 기동은 늦어지지 않는다.
+Environment=HAILO_WAIT_SECS=15
+Environment=HEF=/home/sky/models/y5s_0223_6.hef
+Environment=ENABLE_WHIP=0
+Environment=GST_PLUGIN_PATH=/usr/local/lib/gstreamer-1.0
+# Vehicle-specific WHIP_URL and WHIP_TOKEN belong in this root-only file.
+EnvironmentFile=-/etc/default/drone-companion
+
+ExecStart=/usr/local/bin/drone_companion
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

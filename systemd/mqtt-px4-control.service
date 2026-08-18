@@ -1,0 +1,32 @@
+[Unit]
+Description=MQTT route control for PX4 via drone_companion
+After=network-online.target wg-quick@wg0.service
+Wants=network-online.target wg-quick@wg0.service
+# Only one process may own the PX4 command path. aegisq-agent is the second
+# reason: it publishes under the same MQTT client id (DRONE-01), and a broker
+# accepts one session per id, so the two would take turns evicting each other
+# and neither would reliably receive a command.
+Conflicts=riposte-agent.service aegisq-agent.service
+
+[Service]
+Type=simple
+User=sky
+Group=sky
+SupplementaryGroups=dialout
+WorkingDirectory=/home/sky
+EnvironmentFile=/etc/drone-companion/mqtt-px4-control.env
+
+# The durable command ledger lives here. Nothing in the agent creates this
+# directory, and an absent parent aborts startup.
+StateDirectory=drone-companion
+StateDirectoryMode=0700
+
+ExecStart=/usr/local/bin/mqtt_px4_control
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
