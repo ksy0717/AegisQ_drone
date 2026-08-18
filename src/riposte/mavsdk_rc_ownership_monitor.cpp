@@ -143,6 +143,22 @@ MavsdkRcOwnershipMonitor::~MavsdkRcOwnershipMonitor()
     state_.reset();
 }
 
+[[nodiscard]] const char* passthrough_result_name(
+    const mavsdk::MavlinkPassthrough::Result result) noexcept
+{
+    switch (result) {
+        case mavsdk::MavlinkPassthrough::Result::Success: return "Success";
+        case mavsdk::MavlinkPassthrough::Result::Unknown: return "Unknown";
+        case mavsdk::MavlinkPassthrough::Result::ConnectionError: return "ConnectionError";
+        case mavsdk::MavlinkPassthrough::Result::CommandNoSystem: return "CommandNoSystem";
+        case mavsdk::MavlinkPassthrough::Result::CommandBusy: return "CommandBusy";
+        case mavsdk::MavlinkPassthrough::Result::CommandDenied: return "CommandDenied";
+        case mavsdk::MavlinkPassthrough::Result::CommandUnsupported: return "CommandUnsupported";
+        case mavsdk::MavlinkPassthrough::Result::CommandFailed: return "CommandFailed";
+        default: return "UnknownResult";
+    }
+}
+
 void MavsdkRcOwnershipMonitor::require_message_rate()
 {
     rate_confirmed_.store(false, std::memory_order_release);
@@ -167,7 +183,8 @@ void MavsdkRcOwnershipMonitor::require_message_rate()
             std::nullopt,
             RcCommandAuthorizationGate::Clock::now());
         std::ostringstream message;
-        message << "PX4 RC_CHANNELS rate request failed: " << result;
+        message << "PX4 RC_CHANNELS rate request failed: "
+                << passthrough_result_name(result);
         throw std::runtime_error(message.str());
     }
     rate_confirmed_.store(true, std::memory_order_release);
